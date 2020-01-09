@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">About Me</string>
+    <string name="name">Arpan Ghoshal</string>
+    <string name="yellow_star">Yellow Star</string>
+    <string name="bio">
+        Hi I am Arpan
+
+        Lorem Ipsum is simply dummy text of the printing and typesetting industry.
+        Lorem Ipsum has been the industrys standard dummy text ever since the 1500s,
+        when an unknown printer took a galley of type and scrambled it to make a type
+        specimen book.
+        It has survived not only five centuries, but also the leap into electronic
+        typesetting, remaining essentially unchanged.
+
+    </string>
+    <string name="what_is_your_nick_name">what is your nick name</string>
+    <string name="done">Done</string>
+</resources>
