@@ -16,11 +16,15 @@
 
 package com.example.android.guesstheword.screens.game
 
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.getSystemService
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -53,14 +57,30 @@ class GameFragment : Fragment() {
         viewModel = ViewModelProviders.of(this).get(GameViewModel::class.java)
 
 
+        binding.gameViewModel = viewModel
 
-        binding.correctButton.setOnClickListener {
-            viewModel.onCorrect()
+        // With the code below we set the Lifecycle owner of the binding to out GameFragment
+        // So now the binding layout will automatically use live data to update it self
+        // and we no longer have to use observers for live data in our Fragment
+        // Due to this we can write android:text="@{gameViewModel.word}"
+        // and the text view will automatically update when the word live data changes
+        // also we do not need to do word.value but we directly pass the word live data object instead
+        binding.setLifecycleOwner(this)
+        // Now we don't have to write
+//        viewModel.word.observe(this, Observer { newWord ->
+//            binding.wordText.text =  newWord
+//        })
 
-        }
-        binding.skipButton.setOnClickListener {
-            viewModel.onSkip()
-        }
+//        Instead of having onClick listeners like this
+//        we have directly linked our game fragment view to its model
+//        and have set up listeners like `android:onClick="@{() -> gameViewModel.onCorrect()}"`
+//        binding.correctButton.setOnClickListener {
+//            viewModel.onCorrect()
+//
+//        }
+//        binding.skipButton.setOnClickListener {
+//            viewModel.onSkip()
+//        }
 
         // From the viewModel get the live data score
         // Set an observer on the live data
@@ -69,13 +89,16 @@ class GameFragment : Fragment() {
         // is GameFragment(this) in our case)
         // Next it takes a lambda to execute whenever
         // the live data (score) changes
-        viewModel.score.observe(this, Observer { newScore ->
-            binding.scoreText.text = newScore.toString()
-        })
+        // But we can do even better by  android:text="@{gameViewModel.score}"
+        // since we linked the view directly to the model by binding.setLifecycleOwner(this)
+//        viewModel.score.observe(this, Observer { newScore ->
+//            binding.scoreText.text = newScore.toString()
+//        })
 
-        viewModel.word.observe(this, Observer { newWord ->
-            binding.wordText.text =  viewModel.word.value
-        })
+        // We no longer need this as we have android:text="@{gameViewModel.timeRemainingString}"
+//        viewModel.timeRemaining.observe(this, Observer { timeLeft ->
+//            binding.timerText.text = timeLeft
+//        })
 
         viewModel.eventGameFinish.observe(this, Observer { hasFinished ->
            if (hasFinished) {
@@ -95,6 +118,14 @@ class GameFragment : Fragment() {
            }
         })
 
+        viewModel.eventBuzz.observe(this, Observer { buzzType ->
+            if (buzzType != GameViewModel.BuzzType.NO_BUZZ) {
+                buzz(buzzType.pattern)
+                viewModel.onBuzzComplete() // After done buzzing reset buzzing state
+            }
+        })
+
+
         return binding.root
     }
 
@@ -109,9 +140,18 @@ class GameFragment : Fragment() {
     }
 
 
-    /** Methods for buttons presses **/
+    // Vibration feedback on various events
+    private fun buzz(pattern: LongArray) {
+        val buzzer = activity?.getSystemService<Vibrator>()
 
-
-    /** Methods for updating the UI **/
+        buzzer?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                buzzer.vibrate(VibrationEffect.createWaveform(pattern, -1))
+            } else {
+                //deprecated in API 26
+                buzzer.vibrate(pattern, -1)
+            }
+        }
+    }
 
 }

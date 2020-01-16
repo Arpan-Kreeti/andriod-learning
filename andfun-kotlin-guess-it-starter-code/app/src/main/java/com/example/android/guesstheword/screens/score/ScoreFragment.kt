@@ -17,11 +17,15 @@
 package com.example.android.guesstheword.screens.score
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.android.guesstheword.R
@@ -31,6 +35,9 @@ import com.example.android.guesstheword.databinding.ScoreFragmentBinding
  * Fragment where the final score is shown, after the game is over
  */
 class ScoreFragment : Fragment() {
+
+    private lateinit var viewModel: ScoreViewModel
+    private lateinit var viewModelFactory: ScoreViewModelFactory
 
     override fun onCreateView(
             inflater: LayoutInflater,
@@ -46,15 +53,44 @@ class ScoreFragment : Fragment() {
                 false
         )
 
-        // Get args using by navArgs property delegate
-        val scoreFragmentArgs by navArgs<ScoreFragmentArgs>()
-        binding.scoreText.text = scoreFragmentArgs.score.toString()
-        binding.playAgainButton.setOnClickListener { onPlayAgain() }
+        // Call the ScoreViewModelFactory with the final score obtained from the game completion navigation
+        // The ScoreViewModelFactory creates and returns an object of ScoreViewModel with its score initialized to the final score
+        viewModelFactory = ScoreViewModelFactory(ScoreFragmentArgs.fromBundle(arguments!!).score)
+
+        // Here we are telling ViewModelProviders to create our view model using "viewModelFactory"
+        viewModel = ViewModelProviders.of(this, viewModelFactory).get(ScoreViewModel::class.java)
+
+        // We do android:text="@{scoreViewModel.score}" as we have set the binding object withe the View
+        // so the view can directly change depending on the live data changes, so we dont need an observer like...
+//        viewModel.score.observe(this, Observer { score ->
+//            binding.scoreText.text = score.toString()
+//        })
+
+        viewModel.eventPlayAgain.observe(this, Observer { playAgain ->
+            if (playAgain) {
+                viewModel.resetEventPlayAgain()
+                playAgain()
+            }
+        })
+
+        binding.scoreViewModel = viewModel
+
+        binding.setLifecycleOwner(this)
+
+        // Instead of this we link the onClick listeners directly to the view model
+        // in the view
+
+
+//        binding.playAgainButton.setOnClickListener {
+//            Log.i("ScoreFragment","on click play again")
+//            viewModel.onPlayAgain()
+//        }
+
 
         return binding.root
     }
 
-    private fun onPlayAgain() {
+    private fun playAgain() {
         findNavController().navigate(ScoreFragmentDirections.actionRestart())
     }
 }
