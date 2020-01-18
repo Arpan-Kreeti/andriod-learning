@@ -25,4 +25,5 @@
         android:title="@string/share"
         android:visible="true"
         app:showAsAction="ifRoom" />
+<!--    app:showAsAction="ifRoom" This will cause the menu item to be displayed as an icon in the action bar if there is room-->
 </menu>

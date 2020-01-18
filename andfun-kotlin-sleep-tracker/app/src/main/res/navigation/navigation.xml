@@ -40,6 +40,8 @@
         android:name="com.example.android.trackmysleepquality.sleepquality.SleepQualityFragment"
         android:label="@string/sleep_quality_fragment"
         tools:layout="@layout/fragment_sleep_quality">
+
+        <!-- safe args to get the night id of the current night from the sleep tracking to sleep quality fragment -->
         <argument
             android:name="sleepNightKey"
             app:argType="long" />

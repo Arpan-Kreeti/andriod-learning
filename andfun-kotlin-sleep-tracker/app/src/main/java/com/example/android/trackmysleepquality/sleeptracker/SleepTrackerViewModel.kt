@@ -20,6 +20,7 @@ import android.app.Application
 import android.provider.SyncStateContract.Helpers.insert
 import android.provider.SyncStateContract.Helpers.update
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import com.example.android.trackmysleepquality.database.SleepDatabaseDao
@@ -60,13 +61,54 @@ class SleepTrackerViewModel(
 
     private val nights = database.getAllNights()    // Returns us live data
 
-    // this Transformation map will get executed every time nights changes
+    // This Transformation map will get executed every time nights changes
     // that is night s receive new data from the database
     val nightsString = Transformations.map(nights) { nights ->
         // we supply nights and a resource object which will give us access to our string resources
         formatNights(nights, application.resources)
     }
 
+    private var _showSnackbarEvent = MutableLiveData<Boolean>()
+
+    val showSnackbarEvent: LiveData<Boolean>
+        get() = _showSnackbarEvent
+
+    fun doneShowingSnackbar() {
+        _showSnackbarEvent.value = false
+    }
+
+
+    // This variable will determine when to display the start button due to code
+    // android:enabled="@{sleepTrackerViewModel.startButtonVisible}"
+    // Using a Transformation.map we say to change the state of the variable whenever the
+    // state of tonight changes, we want the start button visible when tonight is null so
+    // we do null == it (it is the first parameter to a lambda)
+    val startButtonVisible = Transformations.map(tonight) {
+        null == it
+    }
+
+    // cleart button is visible only when their is tonight (!=null)
+    // tonight is reset when we press the stop button
+    val stopButtonVisible = Transformations.map(tonight) {
+        null != it
+    }
+
+    // clear button is visible only when their are nights to clear
+    val clearButtonVisible = Transformations.map(nights) {
+        it?.isNotEmpty()
+    }
+
+    // Set to true when user clicks stop tracking button which triggers the observer of this varible to
+    // navigate to sleep quality fragment
+    private val _navigateToSleepQuality = MutableLiveData<SleepNight>()
+
+    val navigateToSleepQuality : LiveData<SleepNight>
+        get() = _navigateToSleepQuality
+
+
+    fun doneNavigating() {
+        _navigateToSleepQuality.value = null
+    }
 
     init {
         // As soon as our view model is initialized get
@@ -129,13 +171,22 @@ class SleepTrackerViewModel(
             // The return @launch annotation is used to specify the function from
             // which a return statement returns from among several nested ones.
             // Here we specify if tonight's value is nil this means the user did not
-            // start sleep tracking so theres no point of stopping tracking
+            // start sleep tracking so there's no point of stopping tracking
             // thus we return from the launch not from the lambda
             // using the return@launch annotation
             val oldNight = tonight.value ?: return@launch
 
+            // set end time
+            oldNight.endTimeMilli = System.currentTimeMillis()
+
             // update end time to be the current time
             update(oldNight)
+
+            // When user clicks stop tracking update the night's end time and set it up in
+            // _navigateToSleepQuality variable, this variable is a live data which is observed
+            // by the fragment when this variable changes then our sleep
+            // tracker fragment navigates to sleep quality fragment
+            _navigateToSleepQuality.value = oldNight
 
         }
     }
@@ -152,6 +203,7 @@ class SleepTrackerViewModel(
             clear()
             tonight.value = null
         }
+        _showSnackbarEvent.value = true // trigger a snackbar message
     }
 
     private suspend fun clear() {

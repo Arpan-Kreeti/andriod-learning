@@ -46,9 +46,53 @@ class GameWonFragment : Fragment() {
             view.findNavController().navigate(GameWonFragmentDirections.actionGameWonFragmentToGameFragment())
         }
 
-        val args = GameWonFragmentArgs.fromBundle(arguments!!)
-        Toast.makeText(context, "NumCorrect: ${args.numCorrect}, NumQuestions: ${args.numQuestions}", Toast.LENGTH_LONG).show()
-
+        setHasOptionsMenu(true)
         return binding.root
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater?.inflate(R.menu.winner_menu, menu)
+
+        // check to see if out intent to share resolves to an activity,
+        // that is there exists an activity to handle our share intent
+        // package manager knows about all activities registered via a android manifest
+        // across all apps in our phone, so it can check if our intent can be handeled by some
+        // activity of some app in our phone
+        if (null == getShareIntent().resolveActivity(activity!!.packageManager)) {
+            // hide the share menu item, since there is no activity in our phone which can handle
+            // this intent
+
+            // similar to finding views by id, we ask the menu to find a menu item by id
+            menu?.findItem(R.id.share)?.setVisible(false)
+        }
+    }
+
+    private fun getShareIntent() : Intent {
+        val args = GameWonFragmentArgs.fromBundle(arguments!!)
+
+
+        return ShareCompat.IntentBuilder.from(activity)
+                .setText(getString(R.string.share_success_text, args.numCorrect, args.numQuestions))
+                .setType("text/plain")
+                .intent
+//
+//        val shareIntent = Intent(Intent.ACTION_SEND)
+//        shareIntent.setType("text/plain")
+//                .putExtra(Intent.EXTRA_TEXT,
+//                        getString(R.string.share_success_text, args.numCorrect,
+//                                args.numQuestions))
+//        return shareIntent
+    }
+
+    private fun shareSuccess() {
+        startActivity(getShareIntent())
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when (item!!.itemId) {
+            R.id.share -> shareSuccess()
+        }
+        return super.onOptionsItemSelected(item)
     }
 }
