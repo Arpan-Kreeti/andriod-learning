@@ -77,6 +77,25 @@ class SleepTrackerFragment : Fragment() {
 
         binding.sleepTrackerViewModel = sleepTrackerViewModel
 
+        // Get the adapter for recycle view
+        val adapter = SleepNightAdapter()
+        // bind the adapter on our recycle view
+        // This tells recycle view to use this adapter we passed
+        binding.sleepList.adapter = adapter
+
+        // Here we tell the adapter what data it should use
+        // In this observer whenever we get a non null value for nights
+        // we update the adapters data, we call ListAdapters submitList() method passing
+        // it the new list, it will update the recycle view efficiently by using DiffUtil class that
+        // we setup and only making minimum changes to the recycle view
+        // By using viewLifecycleOwner as a parameter to observe we ensure that this observe
+        // will only work when the recycler view is on screen
+        sleepTrackerViewModel.nights.observe(viewLifecycleOwner, Observer {
+            it?.let { // let calls a block of code with its this value set
+                adapter.submitList(it)
+            }
+        })
+
         // Set the current activity as the life cycle owner of binding
         // This will allow the binding top observe live data changes
         binding.setLifecycleOwner((this))

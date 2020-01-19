@@ -59,7 +59,7 @@ class SleepTrackerViewModel(
     // we make it mutable live data, so that we can change it
     private var tonight = MutableLiveData<SleepNight?>()
 
-    private val nights = database.getAllNights()    // Returns us live data
+    val nights = database.getAllNights()    // Returns us live data
 
     // This Transformation map will get executed every time nights changes
     // that is night s receive new data from the database
